@@ -18,11 +18,17 @@ package com.formulasearchengine.flink;
  * limitations under the License.
  */
 
+import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
-import org.apache.flink.api.common.functions.FlatMapFunction;
+import org.apache.flink.api.java.io.TextInputFormat;
+import org.apache.flink.api.java.operators.DataSource;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.core.fs.Path;
 import org.apache.flink.util.Collector;
+
+import java.net.URL;
+import java.net.URLDecoder;
 
 /**
  * Implements the "WordCount" program that computes a simple word occurrence histogram
@@ -49,16 +55,17 @@ public class WordCount {
 		final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
 		// get input data
-		DataSet<String> text = env.fromElements(
-				"To be, or not to be,--that is the question:--",
-				"Whether 'tis nobler in the mind to suffer",
-				"The slings and arrows of outrageous fortune",
-				"Or to take arms against a sea of troubles,"
-				);
-
+		ClassLoader classLoader = WordCount.class.getClassLoader();
+		URL resource = classLoader.getResource("ex1.html");
+		final String filename = URLDecoder.decode(resource.getFile(), "UTF-8");
+		Path filePath = new Path(filename);
+		TextInputFormat inp = new TextInputFormat(filePath);
+		inp.setCharsetName("UTF-8");
+		inp.setDelimiter("</ARXIVFILESPLIT>");
+		final DataSource<String> source = env.readFile(inp, filename);
 		DataSet<Tuple2<String, Integer>> counts =
 				// split up the lines in pairs (2-tuples) containing: (word,1)
-				text.flatMap(new LineSplitter())
+				source.flatMap(new LineSplitter())
 				// group by the tuple field "0" and sum up tuple field "1"
 				.groupBy(0)
 				.sum(1);
