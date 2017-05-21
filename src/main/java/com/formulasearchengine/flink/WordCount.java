@@ -19,7 +19,6 @@ package com.formulasearchengine.flink;
  */
 
 import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.io.TextInputFormat;
 import org.apache.flink.api.java.operators.DataSource;
@@ -63,15 +62,8 @@ public class WordCount {
 		inp.setCharsetName("UTF-8");
 		inp.setDelimiter("</ARXIVFILESPLIT>");
 		final DataSource<String> source = env.readFile(inp, filename);
-		DataSet<Tuple2<String, Integer>> counts =
-				// split up the lines in pairs (2-tuples) containing: (word,1)
-				source.flatMap(new LineSplitter())
-				// group by the tuple field "0" and sum up tuple field "1"
-				.groupBy(0)
-				.sum(1);
-
 		// execute and print result
-		counts.print();
+		source.print();
 
 	}
 
